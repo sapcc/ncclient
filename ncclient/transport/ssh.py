@@ -159,8 +159,11 @@ class SSHSession(Session):
             self._transport.close()
 
         # Wait for the transport thread to close.
-        while self.is_alive() and (self is not threading.current_thread()):
-            self.join(10)
+
+        # In greenlet environment this blocks indefinitely and leads to leaking of greenlets
+
+        # while self.is_alive() and (self is not threading.current_thread()):
+        #     self.join(10)
 
         if self._channel:
             self._channel.close()
@@ -475,7 +478,7 @@ class SSHSession(Session):
             s = selectors.DefaultSelector()
             s.register(chan, selectors.EVENT_READ)
             self.logger.debug('selector type = %s', s.__class__.__name__)
-            while True:
+            while self._transport.is_active():
 
                 # Will wakeup evey TICK seconds to check if something
                 # to send, more quickly if something to read (due to
