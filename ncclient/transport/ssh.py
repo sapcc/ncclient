@@ -313,8 +313,11 @@ class SSHSession(Session):
             self._transport.close()
 
         # Wait for the transport thread to close.
-        while self.is_alive() and (self is not threading.current_thread()):
-            self.join(10)
+
+        # In greenlet environment this blocks indefinitely and leads to leaking of greenlets
+
+        # while self.is_alive() and (self is not threading.current_thread()):
+        #     self.join(10)
 
         self._channel = None
         self._connected = False
@@ -534,7 +537,7 @@ class SSHSession(Session):
         def start_delim(data_len): return '\n#%s\n'%(data_len)
 
         try:
-            while True:
+            while self._transport.is_active():
                 # select on a paramiko ssh channel object does not ever return it in the writable list, so channels don't exactly emulate the socket api
                 r, w, e = select([chan], [], [], TICK)
                 # will wakeup evey TICK seconds to check if something to send, more if something to read (due to select returning chan in readable list)
