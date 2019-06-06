@@ -642,6 +642,12 @@ class SSHSession(Session):
             self.logger.debug("Broke out of main loop, error=%r", e)
             self._dispatch_error(e)
             self.close()
+        else:
+            try:
+                self.close()
+            except Exception as e:
+                # preserve old behaviour of fork to ignore close() exceptions
+                self.logger.debug("Error while closing connection, error=%r", e)
 
     @property
     def host(self):
